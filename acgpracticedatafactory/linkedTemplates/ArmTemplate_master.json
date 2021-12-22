@@ -1,0 +1,91 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "acgpracticedatafactory"
+		},
+		"ls_blob_sa_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'ls_blob_sa'"
+		},
+		"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_src_movies_data_container": {
+			"type": "string",
+			"defaultValue": "input"
+		},
+		"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_src_movies_data_file_name": {
+			"type": "string",
+			"defaultValue": "movies.csv"
+		},
+		"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_data_container": {
+			"type": "string",
+			"defaultValue": "output"
+		},
+		"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_data_file_name": {
+			"type": "string",
+			"defaultValue": "movies.csv"
+		},
+		"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_generes_container": {
+			"type": "string",
+			"defaultValue": "output"
+		},
+		"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_generes_file_name": {
+			"type": "string",
+			"defaultValue": "moviesgeneres.csv"
+		},
+		"containerUri": {
+			"type": "string",
+			"metadata": "URI to storage account containing linked ARM templates"
+		},
+		"containerSasToken": {
+			"type": "string",
+			"metadata": "Sas token to storage account containing linked ARM templates"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "acgpracticedatafactory_ArmTemplate_0",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2018-02-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_0.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					},
+					"ls_blob_sa_connectionString": {
+						"value": "[parameters('ls_blob_sa_connectionString')]"
+					},
+					"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_src_movies_data_container": {
+						"value": "[parameters('tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_src_movies_data_container')]"
+					},
+					"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_src_movies_data_file_name": {
+						"value": "[parameters('tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_src_movies_data_file_name')]"
+					},
+					"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_data_container": {
+						"value": "[parameters('tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_data_container')]"
+					},
+					"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_data_file_name": {
+						"value": "[parameters('tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_data_file_name')]"
+					},
+					"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_generes_container": {
+						"value": "[parameters('tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_generes_container')]"
+					},
+					"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_generes_file_name": {
+						"value": "[parameters('tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_generes_file_name')]"
+					}
+				}
+			},
+			"dependsOn": []
+		}
+	]
+}

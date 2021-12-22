@@ -1,0 +1,30 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "acgpracticedatafactory"
+		},
+		"ls_blob_sa_connectionString": {
+			"value": ""
+		},
+		"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_src_movies_data_container": {
+			"value": "input"
+		},
+		"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_src_movies_data_file_name": {
+			"value": "movies.csv"
+		},
+		"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_data_container": {
+			"value": "output"
+		},
+		"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_data_file_name": {
+			"value": "movies.csv"
+		},
+		"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_generes_container": {
+			"value": "output"
+		},
+		"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_generes_file_name": {
+			"value": "moviesgeneres.csv"
+		}
+	}
+}

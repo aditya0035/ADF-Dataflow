@@ -1,0 +1,388 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "acgpracticedatafactory"
+		},
+		"ls_blob_sa_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'ls_blob_sa'"
+		},
+		"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_src_movies_data_container": {
+			"type": "string",
+			"defaultValue": "input"
+		},
+		"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_src_movies_data_file_name": {
+			"type": "string",
+			"defaultValue": "movies.csv"
+		},
+		"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_data_container": {
+			"type": "string",
+			"defaultValue": "output"
+		},
+		"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_data_file_name": {
+			"type": "string",
+			"defaultValue": "movies.csv"
+		},
+		"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_generes_container": {
+			"type": "string",
+			"defaultValue": "output"
+		},
+		"tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_generes_file_name": {
+			"type": "string",
+			"defaultValue": "moviesgeneres.csv"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_blob_sa')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('ls_blob_sa_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_adls_csv')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_blob_sa",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"container_name": {
+						"type": "string"
+					},
+					"folder_name": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"folderPath": {
+							"value": "@dataset().folder_name",
+							"type": "Expression"
+						},
+						"container": {
+							"value": "@dataset().container_name",
+							"type": "Expression"
+						}
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_blob_sa')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/df_movies')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "ds_adls_csv",
+								"type": "DatasetReference"
+							},
+							"name": "MoviesData"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "ds_adls_csv",
+								"type": "DatasetReference"
+							},
+							"name": "SaveMovies"
+						},
+						{
+							"dataset": {
+								"referenceName": "ds_adls_csv",
+								"type": "DatasetReference"
+							},
+							"name": "SaveGeneres"
+						}
+					],
+					"transformations": [
+						{
+							"name": "AddAndUpdateColumns"
+						},
+						{
+							"name": "SplitGeneres"
+						},
+						{
+							"name": "FlattenGeneres"
+						},
+						{
+							"name": "CountGeneres"
+						}
+					],
+					"script": "source(output(\n\t\tmovieId as short,\n\t\ttitle as string,\n\t\tgenres as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> MoviesData\nMoviesData derive(title = toString(left(title, length(title)-6)),\n\t\tyear = toInteger(trim(right(title, 6), '()'))) ~> AddAndUpdateColumns\nAddAndUpdateColumns derive(genres = split(genres, '|')) ~> SplitGeneres\nSplitGeneres foldDown(unroll(genres),\n\tmapColumn(\n\t\tmovieId,\n\t\ttitle,\n\t\tgenres,\n\t\tyear\n\t),\n\tskipDuplicateMapInputs: false,\n\tskipDuplicateMapOutputs: false) ~> FlattenGeneres\nFlattenGeneres aggregate(groupBy(genres),\n\tcount = count(genres)) ~> CountGeneres\nAddAndUpdateColumns sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tsaveOrder: 1) ~> SaveMovies\nCountGeneres sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tsaveOrder: 2) ~> SaveGeneres"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_adls_csv')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_movies_and_generes')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "df_movies",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "1.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "df_movies",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"MoviesData": {
+										"container_name": {
+											"value": "@pipeline().parameters.src_movies_data_container",
+											"type": "Expression"
+										},
+										"folder_name": {
+											"value": "@pipeline().parameters.src_movies_data_file_name",
+											"type": "Expression"
+										}
+									},
+									"SaveMovies": {
+										"container_name": {
+											"value": "@pipeline().parameters.sink_movies_data_container",
+											"type": "Expression"
+										},
+										"folder_name": {
+											"value": "@pipeline().parameters.sink_movies_data_file_name",
+											"type": "Expression"
+										}
+									},
+									"SaveGeneres": {
+										"container_name": {
+											"value": "@pipeline().parameters.sink_movies_generes_container",
+											"type": "Expression"
+										},
+										"folder_name": {
+											"value": "@pipeline().parameters.sink_movies_generes_file_name",
+											"type": "Expression"
+										}
+									}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"parameters": {
+					"src_movies_data_container": {
+						"type": "string"
+					},
+					"src_movies_data_file_name": {
+						"type": "string"
+					},
+					"sink_movies_data_container": {
+						"type": "string"
+					},
+					"sink_movies_data_file_name": {
+						"type": "string"
+					},
+					"sink_movies_generes_container": {
+						"type": "string"
+					},
+					"sink_movies_generes_file_name": {
+						"type": "string"
+					}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/df_movies')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_cp_movies_generes')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Execute Movies and Generes Transformations",
+						"type": "ExecutePipeline",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "pl_movies_and_generes",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "Send Sucesses Notifications",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "Execute Movies and Generes Transformations",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"url": {
+								"value": "https://www.google.com",
+								"type": "Expression"
+							},
+							"method": "GET",
+							"headers": {}
+						}
+					},
+					{
+						"name": "Send Failed Notifications",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "Execute Movies and Generes Transformations",
+								"dependencyConditions": [
+									"Failed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"url": "https://www.google.com",
+							"method": "GET",
+							"headers": {}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"parameters": {
+					"src_movies_data_container": {
+						"type": "string"
+					},
+					"src_movies_data_file_name": {
+						"type": "string"
+					},
+					"sink_movies_data_container": {
+						"type": "string"
+					},
+					"sink_movies_data_file_name": {
+						"type": "string"
+					},
+					"sink_movies_generes_container": {
+						"type": "string"
+					},
+					"sink_movies_generes_file_name": {
+						"type": "string"
+					}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/pl_movies_and_generes')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/tg_scheduled_4hrs')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Started",
+				"pipelines": [
+					{
+						"pipelineReference": {
+							"referenceName": "pl_cp_movies_generes",
+							"type": "PipelineReference"
+						},
+						"parameters": {
+							"src_movies_data_container": "[parameters('tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_src_movies_data_container')]",
+							"src_movies_data_file_name": "[parameters('tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_src_movies_data_file_name')]",
+							"sink_movies_data_container": "[parameters('tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_data_container')]",
+							"sink_movies_data_file_name": "[parameters('tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_data_file_name')]",
+							"sink_movies_generes_container": "[parameters('tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_generes_container')]",
+							"sink_movies_generes_file_name": "[parameters('tg_scheduled_4hrs_properties_pl_cp_movies_generes_parameters_sink_movies_generes_file_name')]"
+						}
+					}
+				],
+				"type": "ScheduleTrigger",
+				"typeProperties": {
+					"recurrence": {
+						"frequency": "Hour",
+						"interval": 4,
+						"startTime": "2021-12-22T16:50:00Z",
+						"timeZone": "UTC"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/pl_cp_movies_generes')]"
+			]
+		}
+	]
+}
