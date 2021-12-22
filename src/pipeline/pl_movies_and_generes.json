@@ -23,17 +23,29 @@
 								"container_name": {
 									"value": "@pipeline().parameters.src_movies_data_container",
 									"type": "Expression"
+								},
+								"folder_name": {
+									"value": "@pipeline().parameters.src_movies_data_file_name",
+									"type": "Expression"
 								}
 							},
 							"SaveMovies": {
 								"container_name": {
 									"value": "@pipeline().parameters.sink_movies_data_container",
 									"type": "Expression"
+								},
+								"folder_name": {
+									"value": "@pipeline().parameters.sink_movies_data_file_name",
+									"type": "Expression"
 								}
 							},
-							"SaveGeneresCount": {
+							"SaveGeneres": {
 								"container_name": {
 									"value": "@pipeline().parameters.sink_movies_generes_container",
+									"type": "Expression"
+								},
+								"folder_name": {
+									"value": "@pipeline().parameters.sink_movies_generes_file_name",
 									"type": "Expression"
 								}
 							}

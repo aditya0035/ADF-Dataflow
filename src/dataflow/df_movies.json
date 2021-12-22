@@ -25,7 +25,7 @@
 						"referenceName": "ds_adls_csv",
 						"type": "DatasetReference"
 					},
-					"name": "SaveGeneresCount"
+					"name": "SaveGeneres"
 				}
 			],
 			"transformations": [
@@ -42,7 +42,7 @@
 					"name": "CountGeneres"
 				}
 			],
-			"script": "source(output(\n\t\tmovieId as short,\n\t\ttitle as string,\n\t\tgenres as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> MoviesData\nMoviesData derive(title = toString(left(title, length(title)-6)),\n\t\tyear = toInteger(trim(right(title, 6), '()'))) ~> AddAndUpdateColumns\nAddAndUpdateColumns derive(genres = split(genres, '|')) ~> SplitGeneres\nSplitGeneres foldDown(unroll(genres),\n\tmapColumn(\n\t\tmovieId,\n\t\ttitle,\n\t\tgenres,\n\t\tyear\n\t),\n\tskipDuplicateMapInputs: false,\n\tskipDuplicateMapOutputs: false) ~> FlattenGeneres\nFlattenGeneres aggregate(groupBy(genres),\n\tcount = count(genres)) ~> CountGeneres\nAddAndUpdateColumns sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tsaveOrder: 1) ~> SaveMovies\nCountGeneres sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tsaveOrder: 2) ~> SaveGeneresCount"
+			"script": "source(output(\n\t\tmovieId as short,\n\t\ttitle as string,\n\t\tgenres as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> MoviesData\nMoviesData derive(title = toString(left(title, length(title)-6)),\n\t\tyear = toInteger(trim(right(title, 6), '()'))) ~> AddAndUpdateColumns\nAddAndUpdateColumns derive(genres = split(genres, '|')) ~> SplitGeneres\nSplitGeneres foldDown(unroll(genres),\n\tmapColumn(\n\t\tmovieId,\n\t\ttitle,\n\t\tgenres,\n\t\tyear\n\t),\n\tskipDuplicateMapInputs: false,\n\tskipDuplicateMapOutputs: false) ~> FlattenGeneres\nFlattenGeneres aggregate(groupBy(genres),\n\tcount = count(genres)) ~> CountGeneres\nAddAndUpdateColumns sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tsaveOrder: 1) ~> SaveMovies\nCountGeneres sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tsaveOrder: 2) ~> SaveGeneres"
 		}
 	}
 }
