@@ -1,0 +1,9 @@
+{
+	"name": "acgpracticedatafactory",
+	"location": "westus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "40b68bad-696b-4c00-98bd-d75c1f319796",
+		"tenantId": "3617ef9b-98b4-40d9-ba43-e1ed6709cf0d"
+	}
+}
