@@ -1,0 +1,32 @@
+{
+	"name": "tg_scheduled_4hrs",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "pl_cp_movies_generes",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"src_movies_data_container": "input",
+					"src_movies_data_file_name": "movies.csv",
+					"sink_movies_data_container": "output",
+					"sink_movies_data_file_name": "movies.csv",
+					"sink_movies_generes_container": "output",
+					"sink_movies_generes_file_name": "moviesgeneres.csv"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Hour",
+				"interval": 4,
+				"startTime": "2021-12-22T16:50:00Z",
+				"timeZone": "UTC"
+			}
+		}
+	}
+}

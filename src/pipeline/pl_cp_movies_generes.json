@@ -1,0 +1,92 @@
+{
+	"name": "pl_cp_movies_generes",
+	"properties": {
+		"activities": [
+			{
+				"name": "Execute Movies and Generes Transformations",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_movies_and_generes",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "Send Sucesses Notifications",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Execute Movies and Generes Transformations",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"url": {
+						"value": "https://www.google.com",
+						"type": "Expression"
+					},
+					"method": "GET"
+				}
+			},
+			{
+				"name": "Send Failed Notifications",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Execute Movies and Generes Transformations",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"url": "https://www.google.com",
+					"method": "GET"
+				}
+			}
+		],
+		"parameters": {
+			"src_movies_data_container": {
+				"type": "string"
+			},
+			"src_movies_data_file_name": {
+				"type": "string"
+			},
+			"sink_movies_data_container": {
+				"type": "string"
+			},
+			"sink_movies_data_file_name": {
+				"type": "string"
+			},
+			"sink_movies_generes_container": {
+				"type": "string"
+			},
+			"sink_movies_generes_file_name": {
+				"type": "string"
+			}
+		},
+		"annotations": []
+	}
+}
